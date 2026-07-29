@@ -1,96 +1,94 @@
 #!/usr/bin/env bash
-# Smoke test the public Claude/Codex skill installer without touching real
-# user skill directories.
+# Smoke test the multi-agent skill installer in a sandboxed HOME, so it never
+# touches the real ~/.claude or ~/.codex.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALLER="$ROOT/scripts/install-skill.sh"
 SKILL_NAME="justfile-template"
+REL="skills/$SKILL_NAME/SKILL.md"          # per-agent path under $HOME/.<agent>/
+
 stage="$(mktemp -d)"
 trap 'rm -rf -- "$stage"' EXIT
 
-pass=0
-fail=0
-
+pass=0; fail=0
 check() {
-    local desc="$1"
-    shift
-    if "$@"; then
-        printf 'ok   %s\n' "$desc"
-        pass=$((pass + 1))
-    else
-        printf 'FAIL %s\n' "$desc"
-        fail=$((fail + 1))
-    fi
+    local desc="$1"; shift
+    if "$@"; then printf 'ok   %s\n' "$desc"; pass=$((pass + 1))
+    else printf 'FAIL %s\n' "$desc"; fail=$((fail + 1)); fi
 }
 
-claude_root="$stage/claude-skills"
-codex_home="$stage/codex-home"
-codex_root="$codex_home/skills"
-custom_codex_root="$stage/custom-codex-skills"
-ignored_codex_home="$stage/ignored-codex-home"
+# Run the installer with a sandboxed HOME and the agent env vars cleared.
+inst() { local h="$1"; shift; env -u CLAUDE_SKILLS_DIR -u CODEX_SKILLS_DIR -u CODEX_HOME HOME="$h" bash "$INSTALLER" "$@"; }
 
-CLAUDE_SKILLS_DIR="$claude_root" bash "$INSTALLER" install >/dev/null
-claude_skill="$claude_root/$SKILL_NAME/SKILL.md"
-check "Claude is the default target" test -f "$claude_skill"
+# --- default target = all, both agents detected ---
+h1="$stage/h1"; mkdir -p "$h1/.claude" "$h1/.codex"
+inst "$h1" install >/dev/null 2>&1
+check "all: installs for detected Claude"       test -f "$h1/.claude/$REL"
+check "all: installs for detected Codex"        test -f "$h1/.codex/$REL"
 
-CODEX_HOME="$codex_home" bash "$INSTALLER" install codex >/dev/null
-codex_skill="$codex_root/$SKILL_NAME/SKILL.md"
-check "Codex uses CODEX_HOME/skills" test -f "$codex_skill"
-check "Claude remains installed after Codex install" test -f "$claude_skill"
+# --- all skips undetected agents ---
+h2="$stage/h2"; mkdir -p "$h2/.claude"
+inst "$h2" install >/dev/null 2>&1
+check "all: installs detected Claude"           test -f "$h2/.claude/$REL"
+check "all: skips undetected Codex"             test ! -e "$h2/.codex"
 
-check "template path is rendered" grep -Fq "$ROOT/template" "$codex_skill"
-check "dist path is rendered" grep -Fq "$ROOT/dist" "$codex_skill"
-check "template placeholder is absent" test "$(grep -Fc '__TEMPLATE_DIR__' "$codex_skill")" -eq 0
-check "dist placeholder is absent" test "$(grep -Fc '__DIST_DIR__' "$codex_skill")" -eq 0
+# --- all with no agents present: no-op, still exit 0 ---
+h3="$stage/h3"; mkdir -p "$h3"
+inst "$h3" install >/dev/null 2>&1
+check "all: no agents -> nothing installed"     test ! -e "$h3/.claude"
 
-printf '\nSTALE_MARKER\n' >> "$codex_skill"
-CODEX_HOME="$codex_home" bash "$INSTALLER" install codex >/dev/null
-check "Codex reinstall refreshes the skill" test "$(grep -Fc 'STALE_MARKER' "$codex_skill")" -eq 0
+# --- explicit claude forces install even when undetected ---
+h4="$stage/h4"; mkdir -p "$h4"
+inst "$h4" install claude >/dev/null 2>&1
+check "claude: forced install when undetected"  test -f "$h4/.claude/$REL"
+check "claude: leaves Codex alone"              test ! -e "$h4/.codex"
 
-CODEX_HOME="$ignored_codex_home" CODEX_SKILLS_DIR="$custom_codex_root" \
-    bash "$INSTALLER" install codex >/dev/null
-custom_codex_skill="$custom_codex_root/$SKILL_NAME/SKILL.md"
-check "CODEX_SKILLS_DIR overrides CODEX_HOME" test -f "$custom_codex_skill"
-check "overridden CODEX_HOME is untouched" test ! -e "$ignored_codex_home"
+# --- explicit codex forces install via CODEX_HOME ---
+h5="$stage/h5"; mkdir -p "$h5"
+env -u CLAUDE_SKILLS_DIR -u CODEX_SKILLS_DIR CODEX_HOME="$h5/.codex" HOME="$h5" \
+    bash "$INSTALLER" install codex >/dev/null 2>&1
+check "codex: forced install via CODEX_HOME"    test -f "$h5/.codex/$REL"
+check "codex: leaves Claude alone"              test ! -e "$h5/.claude"
 
-CODEX_HOME="$codex_home" bash "$INSTALLER" uninstall codex >/dev/null
-check "Codex uninstall removes only its skill" test ! -e "$codex_root/$SKILL_NAME"
-check "Claude survives Codex uninstall" test -f "$claude_skill"
-check "custom Codex root survives other-root uninstall" test -f "$custom_codex_skill"
+# --- CODEX_SKILLS_DIR overrides CODEX_HOME ---
+h6="$stage/h6"; mkdir -p "$h6"
+env -u CLAUDE_SKILLS_DIR CODEX_HOME="$h6/ignored" CODEX_SKILLS_DIR="$h6/custom" HOME="$h6" \
+    bash "$INSTALLER" install codex >/dev/null 2>&1
+check "codex: CODEX_SKILLS_DIR overrides HOME"  test -f "$h6/custom/$SKILL_NAME/SKILL.md"
+check "codex: overridden CODEX_HOME untouched"  test ! -e "$h6/ignored"
 
-CODEX_HOME="$ignored_codex_home" CODEX_SKILLS_DIR="$custom_codex_root" \
-    bash "$INSTALLER" uninstall codex >/dev/null
-CLAUDE_SKILLS_DIR="$claude_root" bash "$INSTALLER" uninstall >/dev/null
-check "custom Codex skill uninstalls cleanly" test ! -e "$custom_codex_root/$SKILL_NAME"
-check "Claude skill uninstalls cleanly" test ! -e "$claude_root/$SKILL_NAME"
+# --- rendering: real paths substituted, placeholders gone ---
+skill="$h1/.claude/$REL"
+check "template path rendered"                  grep -Fq "$ROOT/template" "$skill"
+check "dist path rendered"                      grep -Fq "$ROOT/dist" "$skill"
+check "no __TEMPLATE_DIR__ placeholder"         test "$(grep -Fc '__TEMPLATE_DIR__' "$skill")" -eq 0
+check "no __DIST_DIR__ placeholder"             test "$(grep -Fc '__DIST_DIR__' "$skill")" -eq 0
 
-if CODEX_HOME="$codex_home" bash "$INSTALLER" uninstall codex >/dev/null 2>&1 \
-    && CLAUDE_SKILLS_DIR="$claude_root" bash "$INSTALLER" uninstall >/dev/null 2>&1; then
-    printf 'ok   repeated uninstall is idempotent\n'
-    pass=$((pass + 1))
+# --- reinstall refreshes a stale copy ---
+printf '\nSTALE_MARKER\n' >> "$skill"
+inst "$h1" install claude >/dev/null 2>&1
+check "reinstall refreshes the skill"           test "$(grep -Fc 'STALE_MARKER' "$skill")" -eq 0
+
+# --- uninstall all removes every detected agent ---
+inst "$h1" uninstall >/dev/null 2>&1
+check "uninstall all: Claude removed"           test ! -e "$h1/.claude/skills/$SKILL_NAME"
+check "uninstall all: Codex removed"            test ! -e "$h1/.codex/skills/$SKILL_NAME"
+
+# --- uninstall a specific agent ---
+inst "$h4" uninstall claude >/dev/null 2>&1
+check "uninstall claude removes only Claude"    test ! -e "$h4/.claude/skills/$SKILL_NAME"
+if inst "$h4" uninstall claude >/dev/null 2>&1; then
+    check "repeated uninstall is idempotent" true
 else
-    printf 'FAIL repeated uninstall is idempotent\n'
-    fail=$((fail + 1))
+    check "repeated uninstall is idempotent" false
 fi
 
-if CODEX_HOME="$stage/invalid-home" bash "$INSTALLER" install unsupported >/dev/null 2>&1; then
-    printf 'FAIL unsupported target is rejected\n'
-    fail=$((fail + 1))
-else
-    printf 'ok   unsupported target is rejected\n'
-    pass=$((pass + 1))
-fi
-check "invalid target creates no directory" test ! -e "$stage/invalid-home"
+# --- invalid target / action are rejected and create nothing ---
+if inst "$stage/bad1" install nonsense >/dev/null 2>&1; then check "invalid target rejected" false; else check "invalid target rejected" true; fi
+check "invalid target creates nothing"          test ! -e "$stage/bad1/.claude"
+if inst "$stage/bad2" frobnicate claude >/dev/null 2>&1; then check "invalid action rejected" false; else check "invalid action rejected" true; fi
+check "invalid action creates nothing"          test ! -e "$stage/bad2/.claude"
 
-if CLAUDE_SKILLS_DIR="$stage/invalid-action" bash "$INSTALLER" unsupported claude >/dev/null 2>&1; then
-    printf 'FAIL unsupported action is rejected\n'
-    fail=$((fail + 1))
-else
-    printf 'ok   unsupported action is rejected\n'
-    pass=$((pass + 1))
-fi
-check "invalid action creates no directory" test ! -e "$stage/invalid-action"
-
-printf '%s passed, %s failed\n' "$pass" "$fail"
+printf '\n%s passed, %s failed\n' "$pass" "$fail"
 test "$fail" -eq 0

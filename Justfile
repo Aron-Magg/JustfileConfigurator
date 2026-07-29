@@ -28,19 +28,27 @@ docs-serve PORT="8000":
 package VERSION:
     @bash scripts/package.sh {{VERSION}}
 
-# Install the justfile-template skill into ~/.claude/skills (override CLAUDE_SKILLS_DIR).
+# Install the justfile-template skill into every detected agent (Claude, Codex, …).
 install-skill:
-    @bash scripts/install-skill.sh install
+    @bash scripts/install-skill.sh install all
 
-# Remove the justfile-template skill from ~/.claude/skills.
+# Remove the justfile-template skill from every detected agent.
 uninstall-skill:
-    @bash scripts/install-skill.sh uninstall
+    @bash scripts/install-skill.sh uninstall all
 
-# Install the justfile-template skill into $CODEX_HOME/skills (override CODEX_SKILLS_DIR).
+# Install the justfile-template skill for Claude only (override CLAUDE_SKILLS_DIR).
+install-skill-claude:
+    @bash scripts/install-skill.sh install claude
+
+# Remove the justfile-template Claude skill.
+uninstall-skill-claude:
+    @bash scripts/install-skill.sh uninstall claude
+
+# Install the justfile-template skill for Codex only (override CODEX_SKILLS_DIR).
 install-skill-codex:
     @bash scripts/install-skill.sh install codex
 
-# Remove the justfile-template Codex skill from $CODEX_HOME/skills.
+# Remove the justfile-template Codex skill.
 uninstall-skill-codex:
     @bash scripts/install-skill.sh uninstall codex
 

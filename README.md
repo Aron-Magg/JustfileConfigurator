@@ -75,8 +75,9 @@ just docs-serve   # open the dashboard at http://localhost:8000
 | `just docs-build` | Regenerate `docs/assets/project-data.js` from the real tree + manifests |
 | `just docs-open` / `just docs-serve [PORT]` | Open / serve the dashboard |
 | `just package VERSION` | Build dist archives (full project + template only) |
-| `just install-skill` / `just uninstall-skill` | Install/remove the `justfile-template` Claude skill |
-| `just install-skill-codex` / `just uninstall-skill-codex` | Install/remove the `justfile-template` Codex skill |
+| `just install-skill` / `just uninstall-skill` | Install/remove the skill for **every detected agent** (Claude, Codex, …) |
+| `just install-skill-claude` / `just uninstall-skill-claude` | …for **Claude only** |
+| `just install-skill-codex` / `just uninstall-skill-codex` | …for **Codex only** |
 | `just tree` / `just clean` | Print the template tree / remove archives |
 
 ## Template commands (inside a generated project)
@@ -95,39 +96,34 @@ See [`template/README.md`](template/README.md) for details.
 
 ## Reuse — instantiate the template
 
-Both agent integrations are rendered from the same [`skill/SKILL.md`](skill/SKILL.md)
-source. Re-run the relevant install command whenever you want to refresh an installed copy.
+All agent integrations are rendered from the same [`skill/SKILL.md`](skill/SKILL.md)
+source. Re-run an install command whenever you want to refresh an installed copy.
 
-**Claude skill.** Install it with:
+**Install for every detected agent (recommended).**
 
 ```bash
 just install-skill
 ```
 
-Then, in any project, ask Claude to use the **`justfile-template`** skill. It copies the
-scaffold **without clobbering** your files (merges `.gitignore`, backs up an existing
-`Justfile`), **scans the project** to wire the real `run`/`build`/`test`/`lint` commands into
-the structure, and **parks** anything not runnable in `pending.tsv`.
+This installs the skill into **each agent it finds** on the machine — Claude
+(`~/.claude/skills`) and Codex (`~/.codex/skills`) — and skips any that aren't present.
+`just uninstall-skill` removes it from all of them.
 
-The default destination is `~/.claude/skills/justfile-template`; override its root with
-`CLAUDE_SKILLS_DIR`.
-
-**Codex skill.** Install it separately with:
+**Target a single agent.**
 
 ```bash
-just install-skill-codex
+just install-skill-claude   # Claude only  (override root: CLAUDE_SKILLS_DIR)
+just install-skill-codex    # Codex only   (override root: CODEX_SKILLS_DIR, or CODEX_HOME)
 ```
 
-Codex installs it into `$CODEX_HOME/skills/justfile-template` (normally
-`~/.codex/skills/justfile-template`). Override the complete skills root with
-`CODEX_SKILLS_DIR`, for example:
+These force-install even if the agent isn't auto-detected — useful for a non-standard
+skills root, e.g. `CODEX_SKILLS_DIR="$HOME/.agents/skills" just install-skill-codex`.
 
-```bash
-CODEX_SKILLS_DIR="$HOME/.agents/skills" just install-skill-codex
-```
-
-Then invoke it in Codex with `$justfile-template`. The Claude and Codex copies are
-independent, so installing or removing one does not affect the other.
+Once installed, ask **Claude** to use the `justfile-template` skill, or invoke it in
+**Codex** with `$justfile-template`. The skill copies the scaffold **without clobbering**
+your files (merges `.gitignore`, backs up an existing `Justfile`), **scans the project** to
+wire the real `run`/`build`/`test`/`lint` commands into the structure, and **parks** anything
+not runnable in `pending.tsv`. Each agent's copy is independent.
 
 **Archive.**
 
