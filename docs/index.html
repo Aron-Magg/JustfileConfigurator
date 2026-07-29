@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JustfileConfigurator — Template Dashboard</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo" aria-hidden="true">⚙</span>
+            <div>
+                <h1>JustfileConfigurator</h1>
+                <p class="tagline">Cross-platform Justfile template &amp; dashboard</p>
+            </div>
+        </div>
+        <div class="actions">
+            <input id="search" type="search" placeholder="Search commands…" aria-label="Search commands">
+            <button id="theme-toggle" class="btn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <a href="#overview">Overview</a>
+        <a href="#commands">Commands</a>
+        <a href="#tree">Tree</a>
+        <a href="#matrix">Platform matrix</a>
+        <a href="#packages">Packages</a>
+        <a href="#rules">Rules</a>
+        <a href="#addos">Add an OS</a>
+    </nav>
+
+    <main>
+        <section id="overview" class="panel">
+            <h2>Before / After</h2>
+            <figure class="shot-fig">
+                <img class="shot" src="assets/before-after.png"
+                     alt="A flat, undocumented recipe list on the left versus a grouped, self-documenting just menu on the right">
+                <figcaption>A flat recipe dump (left) becomes a grouped, self-documenting <code>just</code> menu (right).</figcaption>
+            </figure>
+        </section>
+
+        <section id="commands" class="panel">
+            <h2>Commands</h2>
+            <div class="filters" id="cat-filters"></div>
+            <div id="commands-list" class="cards"></div>
+        </section>
+
+        <section id="tree" class="panel">
+            <h2>Template tree</h2>
+            <div id="tree-view" class="tree"></div>
+        </section>
+
+        <section id="matrix" class="panel">
+            <h2>Platform matrix</h2>
+            <div class="table-wrap"><table id="matrix-table"></table></div>
+        </section>
+
+        <section id="packages" class="panel">
+            <h2>Packages per platform</h2>
+            <div class="table-wrap"><table id="packages-table"></table></div>
+        </section>
+
+        <section id="rules" class="panel">
+            <h2>Architectural rules</h2>
+            <ol id="rules-list"></ol>
+        </section>
+
+        <section id="addos" class="panel">
+            <h2>Add a new OS</h2>
+            <ol id="addos-list"></ol>
+            <h3>Required environment variables</h3>
+            <ul id="env-list" class="chips"></ul>
+        </section>
+    </main>
+
+    <footer class="foot"><span id="foot-meta"></span></footer>
+
+    <script src="assets/project-data.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+</html>
