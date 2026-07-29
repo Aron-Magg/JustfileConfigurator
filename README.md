@@ -161,5 +161,4 @@ deferred to a future Linux/macOS/Windows CI matrix.
 ## License
 
 © 2026 Maggisano Aron. **All rights reserved.** Provided for **private, personal,
-non-commercial** use only. **Commercial use requires prior written permission** —
-contact **aronnagh@gmail.com**. See [`LICENSE`](LICENSE) for the full terms.
+non-commercial** use only. **Commercial use requires prior written permission**. See [`LICENSE`](LICENSE) for the full terms.
