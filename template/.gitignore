@@ -1,0 +1,18 @@
+# Local environment
+.env
+
+# Database backups (keep the directory, ignore the dumps)
+/backups/db/*
+!/backups/db/.gitkeep
+
+# Generated reports (keep the directory)
+/reports/*
+!/reports/.gitkeep
+
+# Backup of a pre-existing Justfile (created when scaffolding over one)
+Justfile.bak
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
