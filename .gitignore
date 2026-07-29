@@ -1,0 +1,38 @@
+# ─── Secrets & local environment (never commit) ─────────────────────────────
+# .env.example is committed; every other .env* is not.
+.env
+.env.*
+!.env.example
+!*.env.example
+*.local
+local.properties
+*.key
+*.pem
+*.p12
+*.pfx
+*.keystore
+*.jks
+keystore.properties
+secrets*.json
+secrets*.yml
+credentials*.json
+*.secret
+
+# ─── Generated archives (keep the directory) ────────────────────────────────
+/dist/*
+!/dist/.gitkeep
+
+# ─── Scratch / temp ─────────────────────────────────────────────────────────
+TEMP/
+temp/
+tmp/
+*.tmp
+*.log
+
+# ─── OS / editor noise ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+
+# Note: docs/assets/project-data.js and docs/assets/before-after.png are
+# committed on purpose so the dashboard works offline without a build step.
