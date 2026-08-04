@@ -2,8 +2,10 @@
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
-VERSION="${1:-}"
-[ -n "$VERSION" ] || die "usage: package.sh VERSION (e.g. package.sh 0.1.0)"
+# Version: explicit arg wins; otherwise fall back to the repo-root VERSION file
+# (loaded by lib.sh as $VERSION).
+VERSION="${1:-$VERSION}"
+[ -n "$VERSION" ] || die "usage: package.sh [VERSION]  (defaults to the VERSION file)"
 
 mkdir -p "$DIST_DIR"
 stage="$(mktemp -d)"

@@ -41,7 +41,13 @@ required_files=(
     "docs/assets/app.js"
     "skill/SKILL.md"
     "scripts/install-skill.sh"
+    "scripts/scan-baseline.sh"
+    "scripts/validate-generated.sh"
     "tests/smoke_skill_install.sh"
+    "VERSION"
+    "template/VERSION"
+    "template/.just/state/.gitkeep"
+    "template/.just/scripts/unix/version.sh"
 )
 for f in "${required_files[@]}"; do
     if [ -e "$REPO_ROOT/$f" ]; then ok "$f"; else fail "missing: $f"; fi

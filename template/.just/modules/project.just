@@ -129,3 +129,8 @@ doctor:
 [group('diagnostics')]
 pending:
     @bash '{{_unix}}/pending.sh'
+
+# Show the project/template version.
+[group('diagnostics')]
+version:
+    @bash '{{_unix}}/version.sh'

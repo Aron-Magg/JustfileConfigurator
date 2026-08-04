@@ -15,3 +15,7 @@ Notes:
 - Optional modules (`mod?`) require `just` ≥ 1.52.
 - Settings values must be constant, so `set working-directory := justfile_directory()` is
   invalid; modules use a literal relative path (`set working-directory := '../..'`) instead.
+
+## Credits
+
+- Suggestion from [Else00](https://github.com/Else00).

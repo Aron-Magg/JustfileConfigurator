@@ -5,6 +5,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATE_DIR="$REPO_ROOT/template"
 DOCS_DIR="$REPO_ROOT/docs"
 DIST_DIR="$REPO_ROOT/dist"
+SCRIPTS_DIR="$REPO_ROOT/scripts"
+
+# Project version — single source of truth in the repo-root VERSION file.
+VERSION="$(cat "$REPO_ROOT/VERSION" 2>/dev/null || echo 0.0.0)"
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     C_RESET=$'\033[0m'; C_RED=$'\033[31m'; C_GRN=$'\033[32m'

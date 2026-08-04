@@ -17,6 +17,7 @@ commands is the whole point.
 
 - Template source: `__TEMPLATE_DIR__`
 - Archive fallback: newest `justfile-template-*.tar.gz` in `__DIST_DIR__`
+- Repo helper scripts: `__SCRIPTS_DIR__` (contains `scan-baseline.sh`, `validate-generated.sh`)
 
 ---
 
@@ -43,8 +44,9 @@ mkdir -p "$DEST/backups/db" "$DEST/reports"
 # The template's own README goes INSIDE .just so it never clobbers the project README.
 cp "$SRC/README.md" "$DEST/.just/README.md"
 
-# Add these ONLY if the project doesn't already have them:
-for f in .editorconfig .gitattributes; do
+# Add these ONLY if the project doesn't already have them (VERSION seeds `just version`;
+# a project that already versions itself with a root VERSION keeps its own):
+for f in .editorconfig .gitattributes VERSION; do
     [ -e "$DEST/$f" ] || cp "$SRC/$f" "$DEST/$f"
 done
 
@@ -66,9 +68,30 @@ JustfileConfigurator-owned local/generated files never get committed — and **o
 `.env`, `backups/db/*` (keep `.gitkeep`), `reports/*` (keep `.gitkeep`), and `Justfile.bak`.
 Do **not** add the project's own build artefacts or stack files (e.g. `node_modules/`,
 `build/`, `local.properties`) — those are the project's responsibility and are assumed
-already ignored.
+already ignored. Do **NOT** add `.just/state/` (or `.just/state/scan.json`) to `.gitignore`: the
+incremental-scan baseline state is meant to be committed so re-runs work across machines.
 
 ## Step 2 — Scan the project and detect the stack
+
+### Step 2.0 — Establish or advance the scan baseline (incremental)
+
+Before scanning, run the baseline helper against the destination. It maintains a dedicated ref
+(`refs/heads/justfile-configurator/baseline`) and committed state in `.just/state/scan.json`. It
+**never** switches the branch, **never** stages anything in the index, and **never** edits the
+working files — the only write is `.just/state/scan.json`.
+
+```bash
+bash __SCRIPTS_DIR__/scan-baseline.sh "$DEST"
+```
+
+Read the first line of its output:
+- `MODE=FIRST-RUN`   → analyse the WHOLE project (use the detection table below).
+- `MODE=INCREMENTAL` → analyse ONLY the files it lists (changed since the last run); leave every
+  already-wired script/manifest untouched unless a listed file affects it.
+- `MODE=NO-GIT`      → the target isn't a git repo; fall back to a full scan of the listed files.
+
+The remaining lines are the project-relative paths to analyse. Restrict Step 2's detection to
+that set.
 
 Inspect the destination for build tooling. Detect ALL that apply and read real command
 names (lockfiles pick the package manager; script/target names come from the config):
@@ -137,16 +160,41 @@ missing tool, ambiguous mapping, or an old-justfile recipe you can't safely tran
 
 Never delete a discovered command: it is either wired into a script or parked in pending.tsv.
 
-## Step 4 — Initialise and verify
+## Step 4 — Validate, initialise and verify
+
+### Validate the generated setup (must pass before you report)
+
+Run the generated-project validator. It checks the structure, cross-references, TSV columns,
+Bash syntax, a **native `just` parse**, and that **no `# TODO` placeholder was left behind**.
+
+```bash
+bash __SCRIPTS_DIR__/validate-generated.sh "$DEST"
+```
+
+If it exits non-zero, fix every listed error (a leftover `# TODO`, a malformed TSV row, a broken
+cross-reference, or a `just` parse error) and re-run until it passes. Only then continue.
+
+### Initialise and verify
 
 ```bash
 cd "$DEST"
 just config init      # .env from .env.example (skips if present)
-just --list           # confirm the grouped recipe list
+just --list           # confirm the grouped recipe list (includes `just version`)
 just doctor           # platform + env + tools
 ```
 
 `just` ≥ 1.52 is required (optional modules use `mod?`). If missing, tell the user to install it.
+The generated project carries its own `VERSION` file, shown by `just version`.
+
+### Advance the baseline
+
+Once validation and `just doctor` pass, snapshot this analysis point so the next skill run only
+looks at future changes. First add any paths you've fully handled (or that are irrelevant to the
+stack, e.g. `docs/`, vendored dirs) to the `settled` array in `.just/state/scan.json`, then:
+
+```bash
+bash __SCRIPTS_DIR__/scan-baseline.sh "$DEST" advance
+```
 
 ## Step 5 — Report
 

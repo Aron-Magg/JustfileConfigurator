@@ -12,6 +12,7 @@ cure-plan	safe	project	all	Show what cure would install (dry-run)
 cure	confirm	project	all	Install missing required tools
 doctor	safe	project	all	Full environment diagnostics
 pending	safe	project	all	Show detected-but-unavailable commands (background)
+version	safe	project	all	Show the project/template version
 config init	modifying	config	all	Create .env from .env.example
 config check	safe	config	all	Verify required env vars are set
 config diff	safe	config	all	Diff .env keys against .env.example
