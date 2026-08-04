@@ -71,10 +71,11 @@ just docs-serve   # open the dashboard at http://localhost:8000
 
 | Command | Purpose |
 |---|---|
+| `just version` | Print the configurator version (from the `VERSION` file) |
 | `just validate` | Check structure, references, TSV columns/order, Bash + JS syntax |
 | `just docs-build` | Regenerate `docs/assets/project-data.js` from the real tree + manifests |
 | `just docs-open` / `just docs-serve [PORT]` | Open / serve the dashboard |
-| `just package VERSION` | Build dist archives (full project + template only) |
+| `just package [VERSION]` | Build dist archives (full project + template only); defaults to the `VERSION` file |
 | `just install-skill` / `just uninstall-skill` | Install/remove the skill for **every detected agent** (Claude, Codex, …) |
 | `just install-skill-claude` / `just uninstall-skill-claude` | …for **Claude only** |
 | `just install-skill-codex` / `just uninstall-skill-codex` | …for **Codex only** |
@@ -88,7 +89,7 @@ Grouped for `just --list`:
 |---|---|
 | **lifecycle** | `run` · `setup` · `check` · `ci` · `status` |
 | **platform** | `platform` · `platforms` |
-| **diagnostics** | `health` · `health-all` · `cure-plan` · `cure` · `doctor` · `pending` |
+| **diagnostics** | `health` · `health-all` · `cure-plan` · `cure` · `doctor` · `pending` · `version` |
 | **modules** | `config init｜check｜diff` · `db backup｜restore FILE｜reset` · `tests all` · `reports all` |
 | **optional** (`mod?`) | `mobile` · `desktop` |
 
@@ -125,6 +126,12 @@ your files (merges `.gitignore`, backs up an existing `Justfile`), **scans the p
 wire the real `run`/`build`/`test`/`lint` commands into the structure, and **parks** anything
 not runnable in `pending.tsv`. Each agent's copy is independent.
 
+On **re-runs it only re-analyses what changed**: a dedicated, non-invasive git baseline
+(`refs/heads/justfile-configurator/baseline`) plus a committed `.just/state/scan.json` let it
+diff against the last run instead of re-scanning everything, and a **self-validation gate**
+(`validate-generated.sh`) checks the generated Justfile, references, manifests, syntax and any
+leftover `# TODO` before the skill reports back.
+
 **Archive.**
 
 ```bash
@@ -153,6 +160,10 @@ Full spec and the interactive view: [`docs/STRUCTURE.md`](docs/STRUCTURE.md) ·
 Unix (Arch/Debian/macOS) is fully working and smoke-tested. Windows `.ps1` files are
 documented placeholders; `just validate` flags native `just`-parse and `pwsh` smoke as
 deferred to a future Linux/macOS/Windows CI matrix.
+
+## Acknowledgments
+
+Thanks to [Else00](https://github.com/Else00) for the suggestion.
 
 ## License
 

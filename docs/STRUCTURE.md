@@ -10,15 +10,20 @@ JustfileConfigurator has two nested deliverables:
 ```text
 JustfileConfigurator/
 ├── Justfile              # manage the configurator
+├── VERSION               # single source of truth for the version
 ├── docs/                 # this spec + the HTML dashboard
 │   ├── index.html
 │   ├── STRUCTURE.md
 │   └── assets/           # styles.css, app.js, project-data.js (generated)
-├── scripts/              # validate.sh, docs-build.sh, package.sh, lib.sh
+├── scripts/              # validate.sh, validate-generated.sh, scan-baseline.sh, docs-build.sh, package.sh, lib.sh
 ├── tests/                # smoke_unix.sh, smoke_windows.ps1
 ├── dist/                 # generated archives
 └── template/             # distributable template (see below)
 ```
+
+`validate-generated.sh` and `scan-baseline.sh` are **skill-runtime helpers** (invoked by the
+`justfile-template` skill against a target project, not `just` recipes): the first is a
+correctness gate for a generated project, the second maintains the incremental-scan baseline.
 
 ## Template layout
 
@@ -30,11 +35,13 @@ template/
 ├── .editorconfig
 ├── .gitattributes
 ├── .gitignore
+├── VERSION               # template version, shown by `just version`
 ├── .just/
 │   ├── modules/          # project, config, db, tests, reports, mobile, desktop
 │   ├── manifests/        # commands.tsv, tools.tsv, platforms.tsv, env.required
 │   ├── scripts/          # unix/ (bash), windows/ (ps1 placeholders)
-│   └── adapters/         # arch.sh, debian.sh, macos.sh, windows.ps1
+│   ├── adapters/         # arch.sh, debian.sh, macos.sh, windows.ps1
+│   └── state/            # scan.json — committed incremental-scan baseline
 ├── backups/db/
 └── reports/
 ```

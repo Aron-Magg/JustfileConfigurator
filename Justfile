@@ -7,6 +7,10 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
     @just --list
 
+# Print the configurator version (from the VERSION file).
+version:
+    @cat VERSION
+
 # Validate structure, references, manifests and script syntax.
 validate:
     @bash scripts/validate.sh
@@ -24,8 +28,8 @@ docs-serve PORT="8000":
     @echo "Serving docs on http://localhost:{{PORT}} (Ctrl-C to stop)"
     @python3 -m http.server {{PORT}} --directory docs
 
-# Build dist archives (full project + template only) for a version.
-package VERSION:
+# Build dist archives (full project + template only). Defaults to the VERSION file.
+package VERSION="":
     @bash scripts/package.sh {{VERSION}}
 
 # Install the justfile-template skill into every detected agent (Claude, Codex, …).

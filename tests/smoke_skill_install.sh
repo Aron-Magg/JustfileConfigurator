@@ -62,8 +62,10 @@ check "codex: overridden CODEX_HOME untouched"  test ! -e "$h6/ignored"
 skill="$h1/.claude/$REL"
 check "template path rendered"                  grep -Fq "$ROOT/template" "$skill"
 check "dist path rendered"                      grep -Fq "$ROOT/dist" "$skill"
+check "scripts path rendered"                   grep -Fq "$ROOT/scripts" "$skill"
 check "no __TEMPLATE_DIR__ placeholder"         test "$(grep -Fc '__TEMPLATE_DIR__' "$skill")" -eq 0
 check "no __DIST_DIR__ placeholder"             test "$(grep -Fc '__DIST_DIR__' "$skill")" -eq 0
+check "no __SCRIPTS_DIR__ placeholder"          test "$(grep -Fc '__SCRIPTS_DIR__' "$skill")" -eq 0
 
 # --- reinstall refreshes a stale copy ---
 printf '\nSTALE_MARKER\n' >> "$skill"

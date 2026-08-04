@@ -53,6 +53,7 @@ install_one() {
     # Substitute the real absolute paths so the skill points at this repo.
     sed -e "s#__TEMPLATE_DIR__#$TEMPLATE_DIR#g" \
         -e "s#__DIST_DIR__#$DIST_DIR#g" \
+        -e "s#__SCRIPTS_DIR__#$SCRIPTS_DIR#g" \
         "$SRC" > "$dir/SKILL.md"
     ok "Installed $AGENT_LABEL skill '$SKILL_NAME' -> $dir/SKILL.md"
     info "$INVOKE_HINT"
